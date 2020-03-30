@@ -15,18 +15,20 @@ class Logger {
 	private var savedLogs = [String]()
 	
 	func save(_ log: String) {
+		if savedLogs.isEmpty {
+			savedLogs.insert("\(Date())--- START ---", at: 0)
+		}
 		savedLogs.append(log)
 	}
 	
 	func dumpToFile() {
 		let dumpedString = dumpToString()
-		let logFileName = "Log-\(Date())"
+		let logFileName = "Log-\(Date()).txt"
 		save(text: dumpedString, toDirectory: documentDirectory(), withFileName: logFileName)
 		read(fromDocumentsWithFileName: logFileName) // Debug
 	}
 	
 	func dumpToString() -> String {
-		savedLogs.insert("\(Date())--- START ---", at: 0)
 		savedLogs.append("\(Date())--- END ---")
 		let allLogsString = savedLogs.joined(separator: "\n")
 		savedLogs = [String]()
