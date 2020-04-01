@@ -14,7 +14,7 @@ struct ContentView: View {
     var body: some View {
 		VStack {
 			Text(bluetoothManager.status)
-			Text(bluetoothManager.discoveredDevice)
+			Text(bluetoothManager.currentLog)
 		}
 		.font(Font.system(size: 25, weight: .medium, design: .default))
 	}

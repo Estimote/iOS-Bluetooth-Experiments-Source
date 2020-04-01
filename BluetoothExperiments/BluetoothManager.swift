@@ -16,16 +16,17 @@ import AVKit
 class BluetoothManager: NSObject, ObservableObject {
 	
 	@Published var status: String
-	@Published var discoveredDevice: String
+	@Published var currentLog: String
 	
 	private var centralManager: CBCentralManager!
 	private var peripheralManager: CBPeripheralManager!
     private var peripheral: CBPeripheral!
 	private let phonePeripheral = PhonePeripheral()
+	private let phonePeripheral2 = PhonePeripheral2()
 	
 	override init() {
 		self.status = "Idle."
-		self.discoveredDevice = ""
+		self.currentLog = ""
 		super.init()
 		
 		self.start()
@@ -41,7 +42,8 @@ extension BluetoothManager: CBCentralManagerDelegate, CBPeripheralDelegate, CBPe
 	func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
 		if (peripheral.state == .poweredOn) {
 			peripheralManager.add(phonePeripheral.service)
-			peripheralManager.startAdvertising([CBAdvertisementDataLocalNameKey: "PrzemekTest", CBAdvertisementDataServiceUUIDsKey: [phonePeripheral.serviceUUID]])
+			peripheralManager.add(phonePeripheral2.service)
+			peripheralManager.startAdvertising([CBAdvertisementDataLocalNameKey: "PrzemekTest", CBAdvertisementDataServiceUUIDsKey: [phonePeripheral.serviceUUID, phonePeripheral2.serviceUUID]])
 			
 			status = status + "\nAdvertising."
 		} else {
@@ -55,7 +57,7 @@ extension BluetoothManager: CBCentralManagerDelegate, CBPeripheralDelegate, CBPe
 	
 	func centralManagerDidUpdateState(_ central: CBCentralManager) {
 		if central.state == .poweredOn {
-			centralManager.scanForPeripherals(withServices: [phonePeripheral.serviceUUID], options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
+			centralManager.scanForPeripherals(withServices: [phonePeripheral.serviceUUID, phonePeripheral2.serviceUUID], options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
 			status = status + "\nScanning."
 		} else {
 			status = status + "\nFailed to scan."
@@ -63,8 +65,12 @@ extension BluetoothManager: CBCentralManagerDelegate, CBPeripheralDelegate, CBPe
 	}
 	
 	func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-		discoveredDevice = "\n\(peripheral.name ?? "Unknown"), rssi: \(RSSI)."
-		let log = "\(Date()):\(UIApplication.currentStateName());\(advertisementData[CBAdvertisementDataLocalNameKey] ?? "n/a");\(advertisementData[CBAdvertisementDataServiceUUIDsKey] as! Array<CBUUID>)"
+		let appState = UIApplication.currentStateName()
+		let localName = advertisementData[CBAdvertisementDataLocalNameKey] ?? "<no name>"
+		let serviceUUIDs = (advertisementData[CBAdvertisementDataServiceUUIDsKey] as? Array<CBUUID>) ?? [CBUUID]()
+		let overflowServiceUUIDs = (advertisementData[CBAdvertisementDataOverflowServiceUUIDsKey] as? Array<CBUUID>) ?? [CBUUID]()
+		let log = "\(Date()):\(appState);\(localName);\(serviceUUIDs);\(overflowServiceUUIDs)"
+		currentLog = log
 		Logger.shared.save(log)
 	}
 }
@@ -72,6 +78,16 @@ extension BluetoothManager: CBCentralManagerDelegate, CBPeripheralDelegate, CBPe
 extension BluetoothManager {
 	class PhonePeripheral: NSObject {
         let serviceUUID = CBUUID(string: "44CCDDA1-9E01-4A2B-A707-65C4B5380B97")
+		let testCharacteristic = CBMutableCharacteristic(type: CBUUID(string: "EF04D160-C908-40E0-9903-78E5EA14A7B6"), properties: [.read], value: "TestValue".data(using: .utf8), permissions: [.readable])
+		lazy var service: CBMutableService = {
+			let phoneService = CBMutableService(type: serviceUUID, primary: true)
+			phoneService.characteristics = [testCharacteristic]
+			return phoneService
+		}()
+    }
+	
+	class PhonePeripheral2: NSObject {
+        let serviceUUID = CBUUID(string: "54CCDDA1-9E01-4A2B-A707-65C4B5380B97")
 		let testCharacteristic = CBMutableCharacteristic(type: CBUUID(string: "EF04D160-C908-40E0-9903-78E5EA14A7B6"), properties: [.read], value: "TestValue".data(using: .utf8), permissions: [.readable])
 		lazy var service: CBMutableService = {
 			let phoneService = CBMutableService(type: serviceUUID, primary: true)
