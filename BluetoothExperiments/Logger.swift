@@ -14,7 +14,12 @@ class Logger {
 	
 	private var savedLogs = [String]()
 	
+	func clear() {
+		savedLogs = [String]()
+	}
+	
 	func save(_ log: String) {
+		print(log)
 		if savedLogs.isEmpty {
 			savedLogs.insert("\(Date())--- START ---", at: 0)
 		}

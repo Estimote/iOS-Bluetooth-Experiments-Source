@@ -24,6 +24,10 @@
 	<string>Privacy - Bluetooth Always Usage Description</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>Privacy - Bluetooth Peripheral Usage Description</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>NSLocationAlwaysAndWhenInUseUsageDescription</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>NSLocationWhenInUseUsageDescription</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

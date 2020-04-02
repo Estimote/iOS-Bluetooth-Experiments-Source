@@ -12,11 +12,25 @@ struct ContentView: View {
 	@ObservedObject var bluetoothManager = BluetoothManager()
 	
     var body: some View {
-		VStack {
-			Text(bluetoothManager.status)
-			Text(bluetoothManager.currentLog)
+		VStack(spacing: 20.0) {
+			Spacer()
+			Toggle(isOn: $bluetoothManager.isRunning) {
+				Text("Running")
+			}
+			Text(bluetoothManager.scanningStatus)
+			Text(bluetoothManager.advertisingStatus)
+			Text("Current log:\n \(bluetoothManager.currentLog)")
+			Spacer()
+			Button(action: {
+				Logger.shared.dumpToFile()
+			}) { Text("Dump logs to file") }
+			Button(action: {
+				Logger.shared.clear()
+			}) { Text("Clear logs") }
 		}
 		.font(Font.system(size: 25, weight: .medium, design: .default))
+		.buttonStyle(DefaultButtonStyle())
+		.padding()
 	}
 }
 

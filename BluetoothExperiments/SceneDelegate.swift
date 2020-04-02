@@ -39,7 +39,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 	}
 
 	func sceneDidBecomeActive(_ scene: UIScene) {
-		Logger.shared.dumpToFile()
+		
 	}
 
 	func sceneWillResignActive(_ scene: UIScene) {
