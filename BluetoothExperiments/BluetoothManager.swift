@@ -23,6 +23,7 @@ class BluetoothManager: NSObject, ObservableObject {
 		}
 	}
 	
+	private var dispatchQueue = DispatchQueue(label: "bluetooth-manager-queue")
 	private var centralManager: CBCentralManager?
 	private var peripheralManager: CBPeripheralManager?
 	
@@ -35,8 +36,8 @@ class BluetoothManager: NSObject, ObservableObject {
 	}
 	
 	func start() {
-		centralManager = CBCentralManager(delegate: self, queue: nil)
-		peripheralManager = CBPeripheralManager(delegate: self, queue: nil)
+		centralManager = CBCentralManager(delegate: self, queue: dispatchQueue)
+		peripheralManager = CBPeripheralManager(delegate: self, queue: dispatchQueue)
 		
 		isRunning = true
 	}
@@ -56,41 +57,49 @@ class BluetoothManager: NSObject, ObservableObject {
 
 extension BluetoothManager: CBCentralManagerDelegate, CBPeripheralDelegate, CBPeripheralManagerDelegate {
 	func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
-		if (peripheral.state == .poweredOn) {
-			peripheralManager?.add(PhoneService.service)
-			peripheralManager?.startAdvertising([CBAdvertisementDataLocalNameKey: "TestName", CBAdvertisementDataServiceUUIDsKey: [PhoneService.serviceUUID]]) // TODO: Add data using `CBAdvertisementDataServiceDataKey`.
-			
-			advertisingStatus = "Advertising."
-		} else {
-			advertisingStatus = "Failed to advertise."
+		DispatchQueue.main.async {
+			if (peripheral.state == .poweredOn) {
+				self.peripheralManager?.add(PhoneService.service)
+				self.peripheralManager?.startAdvertising([CBAdvertisementDataLocalNameKey: "TestName", CBAdvertisementDataServiceUUIDsKey: [PhoneService.serviceUUID]]) // TODO: Add data using `CBAdvertisementDataServiceDataKey`.
+				
+				self.advertisingStatus = "Advertising."
+			} else {
+				self.advertisingStatus = "Failed to advertise."
+			}
 		}
 	}
 	
 	func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: Error?) {
-		print("peripheralManagerDidStartAdvertising")
+		DispatchQueue.main.async {
+			print("peripheralManagerDidStartAdvertising")
+		}
 	}
 	
 	func centralManagerDidUpdateState(_ central: CBCentralManager) {
-		if central.state == .poweredOn {
-			centralManager?.scanForPeripherals(withServices: [PhoneService.serviceUUID]) // TODO: Test if the "duplicates" option impacts background
-			scanningStatus = "Scanning."
-		} else {
-			scanningStatus = "Failed to scan."
+		DispatchQueue.main.async {
+			if central.state == .poweredOn {
+				self.centralManager?.scanForPeripherals(withServices: [PhoneService.serviceUUID], options: nil) // TODO: Test if the "duplicates" option impacts background //
+				self.scanningStatus = "Scanning."
+			} else {
+				self.scanningStatus = "Failed to scan."
+			}
 		}
 	}
 	
 	func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-		let appState = UIApplication.currentStateName()
-		let localName = advertisementData[CBAdvertisementDataLocalNameKey] ?? "<no name>"
-		let serviceUUIDs = (advertisementData[CBAdvertisementDataServiceUUIDsKey] as? Array<CBUUID>) ?? [CBUUID]()
-		let overflowServiceUUIDs = (advertisementData[CBAdvertisementDataOverflowServiceUUIDsKey] as? Array<CBUUID>) ?? [CBUUID]()
-		let log = "\(Date()):\(appState);\(localName);\(serviceUUIDs);\(overflowServiceUUIDs);\(RSSI)"
-		currentLog = log
-		print(log)
-		Logger.shared.save(log)
-		
-		centralManager?.stopScan()
-		centralManager?.scanForPeripherals(withServices: [PhoneService.serviceUUID]) // TODO: Test if the "duplicates" option impacts background
+		DispatchQueue.main.async {
+			let appState = UIApplication.currentStateName()
+			let localName = advertisementData[CBAdvertisementDataLocalNameKey] ?? "<no name>"
+			let serviceUUIDs = (advertisementData[CBAdvertisementDataServiceUUIDsKey] as? Array<CBUUID>) ?? [CBUUID]()
+			let overflowServiceUUIDs = (advertisementData[CBAdvertisementDataOverflowServiceUUIDsKey] as? Array<CBUUID>) ?? [CBUUID]()
+			let log = "\(Date()):\(appState);\(localName);\(serviceUUIDs);\(overflowServiceUUIDs);\(RSSI)"
+			self.currentLog = log
+			print(log)
+			Logger.shared.save(log)
+			
+			self.centralManager?.stopScan()
+			self.centralManager?.scanForPeripherals(withServices: [PhoneService.serviceUUID]) // TODO: Test if the "duplicates" option impacts background
+		}
 	}
 }
 
